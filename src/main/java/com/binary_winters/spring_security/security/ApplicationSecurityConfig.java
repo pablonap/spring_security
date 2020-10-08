@@ -1,5 +1,7 @@
 package com.binary_winters.spring_security.security;
 
+import static com.binary_winters.spring_security.security.ApplicationUserRole.*;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,8 +30,8 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/", "index", "/css/*", "/js/*")
-                .permitAll()
+                .antMatchers("/", "index", "/css/*", "/js/*").permitAll()
+                .antMatchers("/api/**").hasRole(STUDENT.name())
                 .anyRequest()
                 .authenticated()
                 .and()
@@ -41,12 +43,22 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
     // This method indicates how I do retrieve the user from the db.
     protected UserDetailsService userDetailsService() {
     	UserDetails lucaUser = User.builder()
-    		.username("luca")
-    		.password(passwordEncoder.encode("luca123"))
-    		.roles("STUDENT") // ROLE_STUDENT is how Spring Security understands it.
+    		.username("annasmith")
+    		.password(passwordEncoder.encode("annasmith123"))
+			.roles(STUDENT.name()) // ROLE_STUDENT
     		.build();
     	
-    	return new InMemoryUserDetailsManager(lucaUser);
+		UserDetails lindaUser = User.builder()
+                .username("linda")
+                .password(passwordEncoder.encode("linda123"))
+                .roles(ADMIN.name()) // ROLE_ADMIN
+                .build();
+
+        return new InMemoryUserDetailsManager(
+                lucaUser,
+                lindaUser
+        ); 
+    	 
     }
 
 }
