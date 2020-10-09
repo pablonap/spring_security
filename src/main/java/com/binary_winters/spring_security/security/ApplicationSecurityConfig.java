@@ -81,6 +81,21 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
                 lindaUser,
                 tomUser
         );
+        
+        
+        /*
+                   --> linda
+         * getAll /
+         		  \
+         		   --> tom
+         		   
+     	 * register --> linda
+     	 
+     	 * delete --> linda
+     	  
+     	 * update --> linda
+         
+         */
     	 
     }
 
