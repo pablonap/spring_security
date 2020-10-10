@@ -4,6 +4,8 @@ import static com.binary_winters.spring_security.security.ApplicationUserRole.AD
 import static com.binary_winters.spring_security.security.ApplicationUserRole.ADMINTRAINEE;
 import static com.binary_winters.spring_security.security.ApplicationUserRole.STUDENT;
 
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,7 +46,9 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
                 .loginPage("/login").permitAll()
 				.defaultSuccessUrl("/courses", true)
 				.and()
-				.rememberMe(); // default to 2 weeks
+				.rememberMe()
+					.tokenValiditySeconds((int)TimeUnit.DAYS.toSeconds(21))
+					.key("something_very_secure");
     }
     
     @Override
