@@ -1,7 +1,5 @@
 package com.binary_winters.spring_security.security;
 
-import static com.binary_winters.spring_security.security.ApplicationUserRole.ADMIN;
-import static com.binary_winters.spring_security.security.ApplicationUserRole.ADMINTRAINEE;
 import static com.binary_winters.spring_security.security.ApplicationUserRole.STUDENT;
 
 import java.util.concurrent.TimeUnit;
@@ -9,16 +7,16 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import com.binary_winters.spring_security.auth.ApplicationUserService;
 
 @Configuration
 @EnableWebSecurity
@@ -26,12 +24,15 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	private final PasswordEncoder passwordEncoder;
+    private final ApplicationUserService applicationUserService;
 	
-	@Autowired
+    @Autowired
 	// The passwordEncoder input parameter is the object generated in PasswordConfig class.
-    public ApplicationSecurityConfig(PasswordEncoder passwordEncoder) {
-		this.passwordEncoder = passwordEncoder;
-	}
+    public ApplicationSecurityConfig(PasswordEncoder passwordEncoder,
+                                     ApplicationUserService applicationUserService) {
+        this.passwordEncoder = passwordEncoder;
+        this.applicationUserService = applicationUserService;
+    }
 
 	@Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -61,46 +62,19 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
     }
     
     @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(daoAuthenticationProvider());
+    }
+
     @Bean
-    // This method indicates how I do retrieve the user from the db.
-    protected UserDetailsService userDetailsService() {
-    	/*
-    	 * In UserDetails there is no concept of role or permissions and that is bundle inside the collection 
-    	 * getAuthorities which returns any type wich extends GrantedAuthority.
+    public DaoAuthenticationProvider daoAuthenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setPasswordEncoder(passwordEncoder);
+        provider.setUserDetailsService(applicationUserService);
 
-		 * A User (from Spring of type UserDetails) has a list of Roles of type GrantedAuthority and each of 
-		 * its roles is an implementation of that interface of type SimpleGrantedAuthority (public UserBuilder 
-		 * roles(String... roles) method).
-    	 */
-    	UserDetails annaSmithUser = User.builder()
-    		.username("annasmith")
-    		.password(passwordEncoder.encode("annasmith123"))
-//			.roles(STUDENT.name()) // ROLE_STUDENT
-    		.authorities(STUDENT.getGrantedAuthorities())
-    		.build();
-    	
-		UserDetails lindaUser = User.builder()
-                .username("linda")
-                .password(passwordEncoder.encode("linda123"))
-//                .roles(ADMIN.name()) // ROLE_ADMIN
-                .authorities(ADMIN.getGrantedAuthorities())
-                .build();
-
-        UserDetails tomUser = User.builder()
-                .username("tom")
-                .password(passwordEncoder.encode("tom123"))
-//                .roles(ADMINTRAINEE.name()) // ROLE_ADMINTRAINEE
-                .authorities(ADMINTRAINEE.getGrantedAuthorities())
-                .build();
-
-        return new InMemoryUserDetailsManager(
-                annaSmithUser,
-                lindaUser,
-                tomUser
-        );
-        
-        
-        /*
+        return provider;
+    }
+		/*
                    --> linda
          * getAll /
          		  \
@@ -113,7 +87,5 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
      	 * update --> linda
          
          */
-    	 
-    }
 
 }
