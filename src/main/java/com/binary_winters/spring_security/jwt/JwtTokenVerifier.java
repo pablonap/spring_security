@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.crypto.SecretKey;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -27,27 +28,35 @@ import io.jsonwebtoken.security.Keys;
 
 public class JwtTokenVerifier extends OncePerRequestFilter {
 
+    private final SecretKey secretKey;
+    private final JwtConfig jwtConfig;
+
+    public JwtTokenVerifier(SecretKey secretKey,
+                            JwtConfig jwtConfig) {
+        this.secretKey = secretKey;
+        this.jwtConfig = jwtConfig;
+    }
+
     @Override
     // Execute this filter (method) for every single client's request.
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        String authorizationHeader = request.getHeader("Authorization");
+        String authorizationHeader = request.getHeader(jwtConfig.getAuthorizationHeader());
 
-        if (Strings.isNullOrEmpty(authorizationHeader) || !authorizationHeader.startsWith("Bearer ")) {
+        if (Strings.isNullOrEmpty(authorizationHeader) || !authorizationHeader.startsWith(jwtConfig.getTokenPrefix())) {
         	// The request will be rejected.
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authorizationHeader.replace("Bearer ", "");
-		String secretKey = "secure_eruces_serecu_curese_resecu";
+        String token = authorizationHeader.replace(jwtConfig.getTokenPrefix(), "");
 
         try {
 
             Jws<Claims> claimsJws = Jwts.parser()
-                    .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
+                    .setSigningKey(secretKey)
                     .parseClaimsJws(token);
 
             Claims body = claimsJws.getBody();
